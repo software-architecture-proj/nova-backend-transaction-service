@@ -7,6 +7,6 @@ import (
 
 func main() {
 	client := config.GetClient()
-	// Optional: do something with client to verify it works
 	log.Println("✅ TigerBeetle client initialized.", client)
+
 }
