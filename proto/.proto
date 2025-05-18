@@ -1,4 +1,0 @@
-service TransactionService {
-  rpc Transfer(TransferRequest) returns (TransferResponse);
-  rpc GetBalance(BalanceRequest) returns (BalanceResponse);
-}
