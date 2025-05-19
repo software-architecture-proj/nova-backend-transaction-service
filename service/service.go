@@ -53,7 +53,7 @@ func (s *TransactionService) Account(ctx context.Context, req *pb.CreateAccountR
 		return nil, status.Errorf(codes.InvalidArgument, "invalid from account ID: %v", err)
 	}
 
-	res, err := s.TB.CreateAccount(ctx, AccountID, req.Username)
+	res, err := s.TB.CreateAccount(ctx, AccountID, req.Username, req.Bank)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Account creation failed: %v", err)
 	}
@@ -112,7 +112,7 @@ func (s *TransactionService) Movements(ctx context.Context, req *pb.GetMovements
 
 	return &pb.GetMovementsResponse{
 		Success:   true,
-		Message:   fmt.Sprintf("History of movements for %s:", req.UserId),
+		Message:   fmt.Sprintf("History of movements for: %s", req.UserId),
 		Movements: movements,
 	}, nil
 }
