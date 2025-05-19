@@ -105,7 +105,7 @@ func (s *TransactionService) Movements(ctx context.Context, req *pb.GetMovements
 			TransferId:   m.TransferID,
 			FromUsername: m.FromUsername,
 			ToUsername:   m.ToUsername,
-			Amount:       m.Amount,
+			Amount:       m.Amount.String(),
 			Timestamp:    m.Timestamp,
 		})
 	}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 	"unsafe"
 
@@ -43,7 +44,7 @@ type GTResult struct {
 	TransferID   string
 	FromUsername string
 	ToUsername   string
-	Amount       string
+	Amount       big.Int
 	Timestamp    string
 }
 
@@ -108,7 +109,6 @@ func (t *TBClientImpl) TransferFunds(ctx context.Context, fromUser, toUser uuid.
 		Amount:          types.ToUint128(amount),
 		Ledger:          1,
 		Code:            1,
-		Timestamp:       0,
 	}
 
 	results, err := t.client.CreateTransfers([]types.Transfer{transfer})
@@ -132,7 +132,7 @@ func (t *TBClientImpl) GetBalance(ctx context.Context, accountID uuid.UUID, from
 	if from, to := fromTime, toTime; from > to {
 		return GBResult{}, errors.New("tigerbeetle: invalid time range")
 	} else if to == 0 {
-		toTime = uint64(time.Now().UnixMicro())
+		to = uint64(time.Now().UnixMicro())
 	}
 	balances, err := t.client.GetAccountBalances(
 		types.AccountFilter{
@@ -172,7 +172,7 @@ func (t *TBClientImpl) GetTransfers(ctx context.Context, accountID uuid.UUID, fr
 	if from, to := fromTime, toTime; from > to {
 		return []GTResult{}, errors.New("tigerbeetle: invalid time range")
 	} else if to == 0 {
-		toTime = uint64(time.Now().UnixMicro())
+		to = uint64(time.Now().UnixMicro())
 	}
 
 	filter := types.AccountFilter{
@@ -201,7 +201,7 @@ func (t *TBClientImpl) GetTransfers(ctx context.Context, accountID uuid.UUID, fr
 	for _, transfer := range transfers {
 		from, err := t.client.LookupAccounts([]types.Uint128{transfer.CreditAccountID})
 		if err != nil {
-			return []GTResult{}, fmt.Errorf("Unable to get usernames for this transfer: %v", err)
+			return []GTResult{}, nil
 		}
 
 		to, err := t.client.LookupAccounts([]types.Uint128{transfer.DebitAccountID})
@@ -211,9 +211,9 @@ func (t *TBClientImpl) GetTransfers(ctx context.Context, accountID uuid.UUID, fr
 
 		movements = append(movements, GTResult{
 			TransferID:   transfer.ID.String(),
-			FromUsername: string(bytes16ToString(uint128ToBytes16(from[0].UserData128))),
-			ToUsername:   string(bytes16ToString(uint128ToBytes16(to[0].UserData128))),
-			Amount:       transfer.Amount.String(),
+			FromUsername: bytes16ToString(uint128ToBytes16(from[0].UserData128)),
+			ToUsername:   bytes16ToString(uint128ToBytes16(to[0].UserData128)),
+			Amount:       transfer.Amount.BigInt(),
 			Timestamp:    time.Unix(0, int64(transfer.UserData64)*1000).Format("2006-01-02 15:04"),
 		})
 	}
@@ -222,7 +222,7 @@ func (t *TBClientImpl) GetTransfers(ctx context.Context, accountID uuid.UUID, fr
 
 // Convert 16-byte array back to a string
 func bytes16ToString(b [16]byte) string {
-	return string(b[:])
+	return strings.TrimRight(string(b[:]), "\u0000")
 }
 
 // Converts UUID (big-endian) to Uint128 (little-endian)
