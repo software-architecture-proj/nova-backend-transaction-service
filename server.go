@@ -3,10 +3,10 @@ package main
 import (
 	"log"
 	"net"
-
-	"nova-backend-transaction-service/internal/tigerbeetle"
-	pb "nova-backend-transaction-service/pb"
 	"nova-backend-transaction-service/service"
+
+	pb "nova-backend-transaction-service/gen/go"
+	"nova-backend-transaction-service/internal/tigerbeetle"
 
 	"google.golang.org/grpc"
 )

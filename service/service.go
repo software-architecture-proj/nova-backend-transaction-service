@@ -3,9 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
+	pb "nova-backend-transaction-service/gen/go"
 	"nova-backend-transaction-service/internal/tigerbeetle"
-	pb "nova-backend-transaction-service/pb"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
@@ -73,17 +74,33 @@ func (s *TransactionService) Balance(ctx context.Context, req *pb.GetBalanceRequ
 		return nil, status.Errorf(codes.InvalidArgument, "invalid from account ID: %v", err)
 	}
 
-	res, err := s.TB.GetBalance(ctx, AccountID, req.FromTime, req.ToTime)
+	current, res, err := s.TB.GetBalance(ctx, AccountID, req.FromTime, req.ToTime)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Account creation failed: %v", err)
 	}
 
+	balances := make([]*pb.GBResult, 0, len(res))
+	for _, b := range res {
+		balances = append(balances, &pb.GBResult{
+			Income:  b.Income.String(),
+			Outcome: b.Outcome.String(),
+		})
+	}
+	if len(balances) == 0 {
+		return &pb.GetBalanceResponse{
+			Success:   true,
+			Message:   fmt.Sprintf("No balances found for %s", req.UserId),
+			Timestamp: time.Now().Format("2006-01-02 15:04"),
+			Balances:  []*pb.GBResult{},
+		}, nil
+	}
+
 	return &pb.GetBalanceResponse{
-		Success:       true,
-		Message:       fmt.Sprintf("Balances for %s. Current: %d", req.UserId, res.Current),
-		DebitsPosted:  uint64(0),
-		CreditsPosted: uint64(0),
-		Timestamp:     res.Timestamp,
+		Success:   true,
+		Message:   fmt.Sprintf("Balances for %s.", req.UserId),
+		Current:   current.String(),
+		Timestamp: time.Now().Format("2006-01-02 15:04"),
+		Balances:  balances,
 	}, nil
 }
 
@@ -98,7 +115,6 @@ func (s *TransactionService) Movements(ctx context.Context, req *pb.GetMovements
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Account creation failed: %v", err)
 	}
-
 	movements := make([]*pb.GTResult, 0, len(res))
 	for _, m := range res {
 		movements = append(movements, &pb.GTResult{
@@ -108,6 +124,14 @@ func (s *TransactionService) Movements(ctx context.Context, req *pb.GetMovements
 			Amount:       m.Amount.String(),
 			Timestamp:    m.Timestamp,
 		})
+	}
+
+	if len(movements) == 0 {
+		return &pb.GetMovementsResponse{
+			Success:   true,
+			Message:   fmt.Sprintf("No movements found for %s", req.UserId),
+			Movements: []*pb.GTResult{},
+		}, nil
 	}
 
 	return &pb.GetMovementsResponse{

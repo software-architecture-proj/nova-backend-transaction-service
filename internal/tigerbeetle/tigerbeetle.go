@@ -20,7 +20,7 @@ import (
 type TBClient interface {
 	CreateAccount(ctx context.Context, accountID uuid.UUID, username string, bank bool) (CAResult, error)
 	TransferFunds(ctx context.Context, fromUser, toUser uuid.UUID, amount uint64) (TFResult, error)
-	GetBalance(ctx context.Context, accountID uuid.UUID, fromTime, toTime uint64) (GBResult, error)
+	GetBalance(ctx context.Context, accountID uuid.UUID, fromTime, toTime uint64) (*big.Int, []GBResult, error)
 	GetTransfers(ctx context.Context, accountID uuid.UUID, fromTime, toTime uint64, limit bool) ([]GTResult, error)
 }
 type TBClientImpl struct {
@@ -35,10 +35,8 @@ type TFResult struct {
 	Timestamp  string
 }
 type GBResult struct {
-	AccountID string
-	Current   string
-	Balances  []types.AccountBalance
-	Timestamp string
+	Income  big.Int
+	Outcome big.Int
 }
 type GTResult struct {
 	TransferID   string
@@ -128,44 +126,48 @@ func (t *TBClientImpl) TransferFunds(ctx context.Context, fromUser, toUser uuid.
 	}, nil
 }
 
-func (t *TBClientImpl) GetBalance(ctx context.Context, accountID uuid.UUID, fromTime, toTime uint64) (GBResult, error) {
+func (t *TBClientImpl) GetBalance(ctx context.Context, accountID uuid.UUID, fromTime, toTime uint64) (*big.Int, []GBResult, error) {
 	if from, to := fromTime, toTime; from > to {
-		return GBResult{}, errors.New("tigerbeetle: invalid time range")
+		return big.NewInt(0), []GBResult{}, errors.New("tigerbeetle: invalid time range")
 	} else if to == 0 {
 		to = uint64(time.Now().UnixMicro())
 	}
-	balances, err := t.client.GetAccountBalances(
-		types.AccountFilter{
-			AccountID:    bytes16ToUint128(accountID),
-			TimestampMin: fromTime,
-			TimestampMax: toTime,
-			Flags: types.AccountFilterFlags{
-				Debits:   true,
-				Credits:  true,
-				Reversed: true,
-			}.ToUint32(),
-		})
+
+	filter := types.AccountFilter{
+		AccountID:    bytes16ToUint128(accountID),
+		TimestampMin: fromTime,
+		TimestampMax: toTime,
+		Limit:        40,
+		Flags: types.AccountFilterFlags{
+			Debits:   true,
+			Credits:  true,
+			Reversed: true,
+		}.ToUint32(),
+	}
+	balances, err := t.client.GetAccountBalances(filter)
+
 	if err != nil {
-		return GBResult{}, fmt.Errorf("tigerbeetle: create balance error: %v", err)
+		return big.NewInt(0), []GBResult{}, fmt.Errorf("tigerbeetle: create balance error: %v", err)
 	}
 	if len(balances) == 0 {
-		return GBResult{
-			AccountID: accountID.String(),
-			Current:   "0",
-			Balances:  []types.AccountBalance{},
-			Timestamp: time.Now().Format("2006-01-02 15:04"),
-		}, nil
+		return big.NewInt(0), []GBResult{{
+			Income:  *new(big.Int),
+			Outcome: *new(big.Int),
+		}}, nil
 	}
 	currentBalance := new(big.Int)
-	credits := balances[0].CreditsPosted.BigInt()
-	debits := balances[0].DebitsPosted.BigInt()
+	credits := balances[0].DebitsPosted.BigInt()
+	debits := balances[0].CreditsPosted.BigInt()
 	currentBalance.Sub(&credits, &debits)
-	return GBResult{
-		AccountID: accountID.String(),
-		Current:   currentBalance.String(),
-		Balances:  balances,
-		Timestamp: time.Now().Format("2006-01-02 15:04"),
-	}, nil
+
+	var allBalances []GBResult
+	for _, balance := range balances {
+		allBalances = append(allBalances, GBResult{
+			Income:  balance.DebitsPosted.BigInt(),
+			Outcome: balance.CreditsPosted.BigInt(),
+		})
+	}
+	return currentBalance, allBalances, nil
 }
 
 func (t *TBClientImpl) GetTransfers(ctx context.Context, accountID uuid.UUID, fromTime, toTime uint64, limit bool) ([]GTResult, error) {
@@ -206,7 +208,7 @@ func (t *TBClientImpl) GetTransfers(ctx context.Context, accountID uuid.UUID, fr
 
 		to, err := t.client.LookupAccounts([]types.Uint128{transfer.DebitAccountID})
 		if err != nil {
-			return []GTResult{}, fmt.Errorf("Unable to get usernames for this transfer: %v", err)
+			return []GTResult{}, fmt.Errorf("unable to get usernames for this transfer: %v", err)
 		}
 
 		movements = append(movements, GTResult{
