@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package functions;
+package transaction;
 
-option go_package = "pb/.";
+option go_package = "gen/go/transaction_service/.";
 
 // Transfer a specific amount from one user to another
 message TransferFundsRequest {
@@ -42,9 +42,9 @@ message GetBalanceRequest {
 message GetBalanceResponse {
   bool success = 1;
   string message = 2;
-  uint64 debits_posted = 3;
-  uint64 credits_posted = 4;
-  string timestamp = 5;
+  string timestamp = 3;
+  string current = 4;
+  repeated GBResult balances = 5;
 }
 
 // Get most recent transfer for account
@@ -56,11 +56,16 @@ message GetMovementsRequest {
 }
 
 message GTResult {
-  string transfer_id = 1;
-  string from_username = 2;
-  string to_username = 3;
+  string transferId = 1;
+  string fromUsername = 2;
+  string toUsername = 3;
   string amount = 4;
   string timestamp = 5;
+}
+
+message GBResult {
+  string income = 1;
+  string outcome= 2;
 }
 
 message GetMovementsResponse {

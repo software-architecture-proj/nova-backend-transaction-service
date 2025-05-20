@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v3.21.12
-// source: proto/functions.proto
+// source: proto/transaction_service.proto
 
 package __
 
@@ -19,10 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TransactionService_Account_FullMethodName   = "/functions.TransactionService/Account"
-	TransactionService_Transfer_FullMethodName  = "/functions.TransactionService/Transfer"
-	TransactionService_Balance_FullMethodName   = "/functions.TransactionService/Balance"
-	TransactionService_Movements_FullMethodName = "/functions.TransactionService/Movements"
+	TransactionService_Account_FullMethodName   = "/transaction.TransactionService/Account"
+	TransactionService_Transfer_FullMethodName  = "/transaction.TransactionService/Transfer"
+	TransactionService_Balance_FullMethodName   = "/transaction.TransactionService/Balance"
+	TransactionService_Movements_FullMethodName = "/transaction.TransactionService/Movements"
 )
 
 // TransactionServiceClient is the client API for TransactionService service.
@@ -214,7 +214,7 @@ func _TransactionService_Movements_Handler(srv interface{}, ctx context.Context,
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var TransactionService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "functions.TransactionService",
+	ServiceName: "transaction.TransactionService",
 	HandlerType: (*TransactionServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -235,5 +235,5 @@ var TransactionService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/functions.proto",
+	Metadata: "proto/transaction_service.proto",
 }
