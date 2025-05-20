@@ -1,10 +1,12 @@
 module nova-backend-transaction-service
 
-go 1.24.3
+go 1.23
+
+toolchain go1.23.9
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/tigerbeetle/tigerbeetle-go v0.16.40
+	github.com/tigerbeetle/tigerbeetle-go v0.16.41
 	google.golang.org/grpc v1.72.1
 	google.golang.org/protobuf v1.36.6
 )

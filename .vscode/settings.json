@@ -1,6 +1,7 @@
 {
     "conventionalCommits.scopes": [
         "Initial",
-        "Middle"
+        "Middle",
+        "Final"
     ]
 }

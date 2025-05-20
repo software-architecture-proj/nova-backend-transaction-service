@@ -1,1 +1,6 @@
+#Files
 data/0_0.tigerbeetle
+go.mod
+go.sum
+#Folders
+vendor/
