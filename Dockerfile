@@ -28,15 +28,3 @@ RUN apt-get update && \
 WORKDIR /root/
 COPY --from=builder /app/transactions .
 CMD ["./transactions"]
-
-
-# To build the Docker image, run:
-
-#echo "github_pat_xxxxxxxxxxxxxxxxxxx" > ~/.github-token  
-#chmod 600 ~/.github-token   
-#DOCKER_BUILDKIT=1 docker build \
-#  --secret id=github_token,src=$HOME/.github-token \
-#  -t transactions:x .
-
-# To run the Docker container, use:
-    #docker run --network=host --privileged -it transactions:x
