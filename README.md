@@ -1,4 +1,4 @@
-# 🐯 TigerBeetle Integration — Account Storage for Transaction Service
+# 🐯 Transaction Service - TigerBeetle Integration
 
 This document describes how the `Transactions` service leverages [TigerBeetle](https://tigerbeetle.com) as a high-performance financial ledger. It outlines how accounts are structured, how values are encoded, and the rationale behind architectural decisions.
 
