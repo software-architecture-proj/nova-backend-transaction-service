@@ -87,6 +87,7 @@ func (s *TransactionService) Balance(ctx context.Context, req *pb.GetBalanceRequ
 		})
 	}
 	if len(balances) == 0 {
+		fmt.Println("Balance is 0 for this account or it was not found.")
 		return &pb.GetBalanceResponse{
 			Success:   true,
 			Message:   fmt.Sprintf("No balances found for %s", req.UserId),
