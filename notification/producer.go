@@ -21,6 +21,7 @@ type Producer struct {
 
 type TransactionNotification struct {
 	Type          string  `json:"type"`
+	Email         string  `json:"email"`
 	TransactionID string  `json:"transactionId"`
 	Amount        float64 `json:"amount"`
 }
@@ -95,9 +96,10 @@ func NewProducer() (*Producer, error) {
 	}, nil
 }
 
-func (p *Producer) SendTransactionNotification(transactionID string, amount float64) error {
+func (p *Producer) SendTransactionNotification(email, transactionID string, amount float64) error {
 	notification := TransactionNotification{
 		Type:          "transaction",
+		Email:         email,
 		TransactionID: transactionID,
 		Amount:        amount,
 	}

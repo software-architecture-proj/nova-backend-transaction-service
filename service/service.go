@@ -39,6 +39,21 @@ func (s *TransactionService) Transfer(ctx context.Context, req *pb.TransferFunds
 		return nil, status.Errorf(codes.Internal, "transfer failed: %v", err)
 	}
 
+    // Create the notification producer
+    producer, err := notification.NewProducer()
+    if err != nil {
+        log.Printf("Failed to create notification producer: %v", err)
+        return
+    }
+    defer producer.Close()  // Always close the producer when done
+
+    // Send the transaction notification
+    err = producer.SendTransactionNotification(userEmail, res.TransferID, req.Amount)
+    if err != nil {
+        log.Printf("Failed to send transaction notification: %v", err)
+        return
+    }
+
 	return &pb.TransferFundsResponse{
 		Success:    true,
 		Message:    fmt.Sprintf("Transferred %d from %s to %s", req.Amount, req.FromUserId, req.ToUserId),
