@@ -48,7 +48,7 @@ func (s *TransactionService) Transfer(ctx context.Context, req *pb.TransferFunds
     defer producer.Close()  // Always close the producer when done
 
     // Send the transaction notification
-    err = producer.SendTransactionNotification(userEmail, res.TransferID, req.Amount)
+    err = producer.SendTransactionNotification(req.FromUserEmail, res.TransferID, req.Amount)
     if err != nil {
         log.Printf("Failed to send transaction notification: %v", err)
         return
