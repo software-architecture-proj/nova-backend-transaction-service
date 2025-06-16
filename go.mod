@@ -2,7 +2,9 @@ module github.com/software-architecture-proj/nova-backend-transaction-service
 
 go 1.24.3
 
+
 toolchain go1.24.4
+
 
 require (
 	github.com/google/uuid v1.6.0
