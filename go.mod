@@ -1,8 +1,6 @@
 module nova-backend-transaction-service
 
-go 1.23
-
-toolchain go1.23.9
+go 1.24.3
 
 require (
 	github.com/google/uuid v1.6.0
@@ -12,6 +10,8 @@ require (
 )
 
 require (
+	github.com/software-architecture-proj/nova-backend-common-protos v0.0.0-20250615203818-b991d8ea21a1 // indirect
+	github.com/streadway/amqp v1.1.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
