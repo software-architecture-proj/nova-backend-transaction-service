@@ -5,7 +5,7 @@ import (
 	"net"
 	"nova-backend-transaction-service/service"
 
-	pb "nova-backend-transaction-service/gen/go"
+	pb "github.com/software-architecture-proj/nova-backend-common-protos/gen/go/transaction_service"
 	"nova-backend-transaction-service/internal/tigerbeetle"
 
 	"google.golang.org/grpc"
