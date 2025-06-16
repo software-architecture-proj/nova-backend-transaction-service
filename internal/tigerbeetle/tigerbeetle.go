@@ -10,7 +10,8 @@ import (
 	"unsafe"
 
 	"math/big"
-	"nova-backend-transaction-service/config"
+
+	"github.com/software-architecture-proj/nova-backend-transaction-service/config"
 
 	"github.com/google/uuid"
 	tb "github.com/tigerbeetle/tigerbeetle-go"

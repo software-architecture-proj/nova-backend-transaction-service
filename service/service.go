@@ -6,11 +6,11 @@ import (
 	"log"
 	"time"
 
-	pb "github.com/software-architecture-proj/nova-backend-common-protos/gen/go/transaction_service"
-	"nova-backend-transaction-service/internal/tigerbeetle"
-	"nova-backend-transaction-service/notification"
 
 	"github.com/google/uuid"
+	pb "github.com/software-architecture-proj/nova-backend-common-protos/gen/go/transaction_service"
+	"github.com/software-architecture-proj/nova-backend-transaction-service/internal/tigerbeetle"
+	"github.com/software-architecture-proj/nova-backend-transaction-service/notification"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -45,7 +45,9 @@ func (s *TransactionService) Transfer(ctx context.Context, req *pb.TransferFunds
 	producer, err := notification.NewProducer()
 	if err != nil {
 		log.Printf("Failed to create notification producer: %v", err)
+
 		return nil, status.Errorf(codes.Internal, "failed to create notification producer: %v", err)
+
 	}
 	defer producer.Close() // Always close the producer when done
 
@@ -53,7 +55,9 @@ func (s *TransactionService) Transfer(ctx context.Context, req *pb.TransferFunds
 	err = producer.SendTransactionNotification(req.FromUserEmail, res.TransferID, float64(req.Amount))
 	if err != nil {
 		log.Printf("Failed to send transaction notification: %v", err)
+
 		return nil, status.Errorf(codes.Internal, "failed to send transaction notification: %v", err)
+
 	}
 
 	return &pb.TransferFundsResponse{
