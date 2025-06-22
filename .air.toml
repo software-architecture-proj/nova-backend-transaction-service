@@ -1,0 +1,63 @@
+# air.toml: Configuration file for 'air' live-reloading tool
+
+# Root directory of your project
+root = "."
+
+# Temporary directory for compiled binaries
+tmp_dir = "tmp"
+
+[build]
+# Command to build your Go application.
+# It compiles 'server.go' and places the executable in the 'tmp' directory.
+cmd = "go build -o ./tmp/transactions ./server.go"
+
+# Binary name (must match the output of 'cmd')
+bin = "./tmp/transactions"
+
+# Command to run your compiled binary.
+# This is what 'air' will execute after a successful build.
+# If your server needs arguments, add them here.
+full_bin = "APP_ENV=development ./tmp/transactions"
+
+# Exclude specific directories from watching for changes
+exclude_dir = ["tmp", "vendor", "testdata", "node_modules", "static", "assets", "frontend", "pkg"]
+
+# Watch these file extensions for changes
+watch_exts = ["go", "mod", "sum", "toml"] # Added 'toml' for air.toml changes
+
+# Ignore specific files
+exclude_files = []
+
+# Watch specific files/directories in addition to watch_exts
+include_dir = []
+
+# Whether to kill the previous process before restarting.
+# Set to true for graceful shutdown.
+stop_on_error = true
+send_interrupt = true
+poll = true               
+poll_interval = 500
+delay = 1000 # milliseconds to wait before restarting after a change
+
+[log]
+# Show build errors in the log
+time = true
+
+[color]
+# Custom colors for log output (optional)
+main = "magenta"
+watcher = "cyan"
+build = "yellow"
+runner = "green"
+
+[misc]
+# Enable browser auto-reload (only if you have a web frontend served by Go)
+# It requires a JavaScript snippet in your frontend.
+# If you are only building a backend service, you can set this to false.
+# This assumes your service might serve a frontend or static files.
+livereload_backend = true
+
+# Path to the livereload script for frontend auto-reload.
+# This will be automatically injected by 'air' if livereload_backend is true.
+# Change this if your frontend's base path is different.
+# livereload_url = "http://localhost:8080/livereload.js" # This is usually handled by air

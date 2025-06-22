@@ -1,0 +1,29 @@
+# syntax=docker/dockerfile:1.4
+FROM golang:1.24 AS builder
+
+# Set GOPRIVATE to allow downloading private modules from GitHub
+ENV GOPRIVATE=github.com/software-architecture-proj/*
+
+WORKDIR /app
+
+# Configure Git to use the GitHub token for private repositories
+# This secret should be provided when building or running with Docker Compose
+RUN --mount=type=secret,id=github_token \
+    git config --global url."https://$(cat /run/secrets/github_token):x-oauth-basic@github.com/".insteadOf "https://github.com/"
+
+# Copy go.mod and go.sum and download dependencies
+# This step uses a secret for private modules
+COPY go.mod go.sum ./
+RUN --mount=type=secret,id=github_token go mod download
+
+# Install 'air' for live reloading
+# 'air' is a popular tool for Go applications that watches for file changes
+# and automatically rebuilds and restarts the application.
+RUN go install github.com/air-verse/air@latest
+
+# Copy the rest of the application source code
+COPY . .
+
+# Set the entrypoint to run 'air'
+# 'air' will then use the air.toml configuration to build and run your Go app
+CMD ["air"]

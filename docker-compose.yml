@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  transaction_service:
+    # Use the Dockerfile.dev for building the development image
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      # Define the secrets required during the build process (for go mod download)
+      secrets:
+        - github_token
+
+    # Mount the current directory into the container's /app directory.
+    # This allows 'air' to detect file changes on your host machine and trigger rebuilds.
+    volumes:
+      - .:/app
+      # Cache Go modules to speed up subsequent builds
+      - go-cache:/go/pkg/mod
+
+    # Map port 8080 from the container to port 8080 on your host machine.
+    # Adjust this if your Go application listens on a different port.
+    ports:
+      - "8080:8080" # Example port, change if your Go app uses a different one
+
+    # Expose the secrets to the running container (for air or other runtime needs)
+    secrets:
+      - github_token
+
+    # Set up environment variables for the Go application if needed.
+    # For example, if your app needs a specific environment.
+    environment:
+      # Example: set a development mode environment variable
+      - APP_ENV=development
+      # Set the timezone for the container
+      - TZ=America/Bogota
+
+# Define the secrets used in this compose file
+secrets:
+  # github_token: This secret is used to authenticate with GitHub for private Go modules.
+  # Create a file named 'github_token.txt' in the same directory as compose.yml
+  # and paste your GitHub Personal Access Token (PAT) into it.
+  github_token:
+    file: ./github_token.txt
+
+# Define named volumes for caching
+volumes:
+  # go-cache: Used to cache Go modules, improving build times during development.
+  go-cache:

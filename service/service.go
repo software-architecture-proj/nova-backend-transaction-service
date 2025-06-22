@@ -6,7 +6,6 @@ import (
 	"log"
 	"time"
 
-
 	"github.com/google/uuid"
 	pb "github.com/software-architecture-proj/nova-backend-common-protos/gen/go/transaction_service"
 	"github.com/software-architecture-proj/nova-backend-transaction-service/internal/tigerbeetle"
@@ -42,23 +41,21 @@ func (s *TransactionService) Transfer(ctx context.Context, req *pb.TransferFunds
 	}
 
 	// Create the notification producer
-	producer, err := notification.NewProducer()
-	if err != nil {
-		log.Printf("Failed to create notification producer: %v", err)
-
-		return nil, status.Errorf(codes.Internal, "failed to create notification producer: %v", err)
-
-	}
-	defer producer.Close() // Always close the producer when done
-
-	// Send the transaction notification
-	err = producer.SendTransactionNotification(req.FromUserEmail, res.TransferID, float64(req.Amount))
-	if err != nil {
-		log.Printf("Failed to send transaction notification: %v", err)
-
-		return nil, status.Errorf(codes.Internal, "failed to send transaction notification: %v", err)
-
-	}
+	go func() {
+		producer, err := notification.NewProducer()
+		if err != nil || producer == nil {
+			log.Printf("Failed to create notification producer V2: %v", err)
+			return
+		}
+		defer func() {
+			if producer != nil {
+				producer.Close()
+			}
+		}()
+		if err = producer.SendTransactionNotification(req.FromUserEmail, res.TransferID, float64(req.Amount)); err != nil {
+			log.Printf("Failed to send transaction notification: %v", err)
+		}
+	}()
 
 	return &pb.TransferFundsResponse{
 		Success:    true,
