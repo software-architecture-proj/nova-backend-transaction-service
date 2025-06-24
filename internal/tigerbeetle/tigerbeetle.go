@@ -49,6 +49,7 @@ type GTResult struct {
 
 func NewTBClient() TBClient {
 	c := config.GetClient()
+	log.Println("Outbound IP:", config.GetOutboundIP())
 	log.Println("✅ TigerBeetle client initialized")
 	return &TBClientImpl{client: c}
 }

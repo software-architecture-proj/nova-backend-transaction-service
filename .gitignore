@@ -1,6 +1,7 @@
 #Files
 data/0_0.tigerbeetle
+*.txt
 #Folders
 vendor/
-temp/
-*.txt
+tmp/
+proto/

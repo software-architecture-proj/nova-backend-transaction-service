@@ -1,29 +1,38 @@
 # syntax=docker/dockerfile:1.4
-FROM golang:1.24 AS builder
+FROM golang:1.24
 
-# Set GOPRIVATE to allow downloading private modules from GitHub
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Bogota
 ENV GOPRIVATE=github.com/software-architecture-proj/*
+ENV GO_ENV=development
 
+# Install dependencies and Air
+RUN apt-get update && \
+    apt-get install -y tzdata wget curl git postgresql-client && \
+    ln -fs /usr/share/zoneinfo/$TZ /etc/localtime && \
+    dpkg-reconfigure --frontend noninteractive tzdata && \
+    go install github.com/air-verse/air@latest && \
+    wget https://github.com/fullstorydev/grpcurl/releases/download/v1.9.3/grpcurl_1.9.3_linux_amd64.deb && \
+    dpkg -i grpcurl_1.9.3_linux_amd64.deb
+
+# Set up workspace
 WORKDIR /app
 
-# Configure Git to use the GitHub token for private repositories
-# This secret should be provided when building or running with Docker Compose
+# For private module access
 RUN --mount=type=secret,id=github_token \
     git config --global url."https://$(cat /run/secrets/github_token):x-oauth-basic@github.com/".insteadOf "https://github.com/"
 
-# Copy go.mod and go.sum and download dependencies
-# This step uses a secret for private modules
 COPY go.mod go.sum ./
 RUN --mount=type=secret,id=github_token go mod download
 
-# Install 'air' for live reloading
-# 'air' is a popular tool for Go applications that watches for file changes
-# and automatically rebuilds and restarts the application.
-RUN go install github.com/air-verse/air@latest
-
-# Copy the rest of the application source code
 COPY . .
+RUN go build -o transactions ./main.go
 
-# Set the entrypoint to run 'air'
-# 'air' will then use the air.toml configuration to build and run your Go app
-CMD ["air"]
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# inside /app (your WORKDIR)
+COPY ./proto/transaction_service.proto ./transaction_service.proto
+EXPOSE 50051
+
+CMD ["/entrypoint.sh"]

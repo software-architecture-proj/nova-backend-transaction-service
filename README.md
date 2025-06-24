@@ -74,3 +74,9 @@ transfer := types.Transfer{
 | `Amount`          | `uint128` | Transfer amount in minor currency units (e.g., cents). Must be the same for both debit and credit sides.                 |
 | `Ledger`          | `uint64`  | Static value (`1`) to match the ledger group used in accounts.                                                           |
 | `Code`            | `uint64`  | Static or optional value to categorize the transfer type. Can be expanded for different transaction types in the future. |
+
+## Run
+
+rm ./data/0_0.tigerbeetle
+./data/tigerbeetle format --cluster=0 --replica=0 --replica-count=1 --development ./data/0_0.tigerbeetle
+ ./data/tigerbeetle start --addresses=0.0.0.0:3000 --development ./data/0_0.tigerbeetle
