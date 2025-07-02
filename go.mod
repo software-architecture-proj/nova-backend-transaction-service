@@ -6,7 +6,7 @@ toolchain go1.24.4
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/software-architecture-proj/nova-backend-common-protos v0.0.0-20250616022611-dcf45b575ecc
+	github.com/software-architecture-proj/nova-backend-common-protos v0.0.0-20250702023127-4d2a66aff785
 	github.com/streadway/amqp v1.1.0
 	github.com/tigerbeetle/tigerbeetle-go v0.16.41
 	google.golang.org/grpc v1.72.1
