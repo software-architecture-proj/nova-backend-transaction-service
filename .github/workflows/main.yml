@@ -1,0 +1,116 @@
+name: Build & Push Docker image
+
+on:
+  push:
+    branches: ["**"]       
+  pull_request:            
+
+env:
+  REGISTRY:  ${{ secrets.REGISTRY_URL }}
+  NAMESPACE: nova                           
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read         
+      packages: write         
+      id-token: write
+
+    steps:
+    # 1) Checkout completo (con historial para comparar versiones)
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 0 }
+
+    # 2) Leer VERSION, validar semver y preparar etiquetas
+    - name: Validate version bump & set tags
+      id: ver
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # Línea “nombre:semver” del archivo VERSION, sin espacios ni saltos
+        NEW_LINE=$(tr -d ' \n' < VERSION)        # ej. my-app:1.2.4
+        IMAGE_NAME=${NEW_LINE%%:*}
+        NEW_VER=${NEW_LINE#*:}
+
+        # Versión anterior (si la había) en el commit base de la PR o push
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          BASE="${{ github.event.pull_request.base.sha }}"
+        else
+          BASE="${{ github.event.before }}"
+        fi
+
+        OLD_VER=""
+        if git cat-file -e "$BASE:VERSION" 2>/dev/null; then
+          OLD_LINE=$(git show "$BASE:VERSION" | tr -d ' \n')
+          OLD_VER=${OLD_LINE#*:}
+        fi
+
+        semver_gt() {  # 0 = ok si $1 > $2
+          [[ -z "$2" ]] && return 0
+          IFS=. read -r a b c <<<"$1"
+          IFS=. read -r x y z <<<"$2"
+          (( a>x )) && return 0 || (( a<x )) && return 1
+          (( b>y )) && return 0 || (( b<y )) && return 1
+          (( c>z )) && return 0 || return 1
+        }
+
+        if ! semver_gt "$NEW_VER" "$OLD_VER"; then
+          echo "::error::La nueva versión $NEW_VER no es mayor que la anterior $OLD_VER"; exit 1
+        fi
+
+        # Sufijo -dev para ramas ≠ main
+        TAG_SUFFIX=""
+        if [[ "${{ github.ref_name }}" != "main" ]]; then
+          TAG_SUFFIX="-dev"
+        fi
+
+        FINAL_TAG="${IMAGE_NAME}:${NEW_VER}${TAG_SUFFIX}"
+        FULL_IMAGE="${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${FINAL_TAG}"
+
+        echo "FINAL_TAG=$FINAL_TAG"   >>"$GITHUB_ENV"
+        echo "FULL_IMAGE=$FULL_IMAGE" >>"$GITHUB_ENV"
+        echo "image=$FULL_IMAGE"      >>"$GITHUB_OUTPUT"
+
+    # 3) Login al registro
+    - uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.REGISTRY_USER }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+
+    # 4) Configurar Buildx
+    - uses: docker/setup-buildx-action@v3
+
+    # 5) Build & Push (contexto = raíz del repo)
+    - name: Build and push image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ env.FULL_IMAGE }}
+        cache-from: type=gha
+        cache-to:   type=gha,mode=max
+
+    # … pasos previos: checkout, login registry, build & push …
+    
+    - uses: sigstore/cosign-installer@v3
+      with:
+        cosign-release: "v2.5.0"
+    
+    - name: Sign image (keyless OIDC)
+      env:
+        COSIGN_EXPERIMENTAL: "1"
+      run: |
+        cosign sign --yes --recursive ${{ env.FULL_IMAGE }}
+    
+    - name: Verify signature
+      env:
+        COSIGN_EXPERIMENTAL: "1"
+      run: |
+        EXPECTED_ID="https://github.com/${{ github.workflow_ref }}"
+        cosign verify \
+          --certificate-identity     "$EXPECTED_ID" \
+          --certificate-oidc-issuer  "https://token.actions.githubusercontent.com" \
+          "${{ env.FULL_IMAGE }}"
