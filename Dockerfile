@@ -30,11 +30,7 @@ RUN apt-get update && \
 WORKDIR /root/
 
 COPY --from=builder /app/transactions .
-COPY --from=builder /app/proto/transaction_service.proto .
-
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
 
 EXPOSE 50051
 
-CMD ["/entrypoint.sh"]
+CMD ["./transactions"]
